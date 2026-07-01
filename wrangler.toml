@@ -1,0 +1,48 @@
+name = "drawspace"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+main = "worker.ts"
+
+[assets]
+directory = "dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*", "/ws/*", "/internal/*", "/v1/*", "/_deepspace/*"]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["AppRecordRoom", "AppYjsRoom", "AppCanvasRoom", "AppPresenceRoom", "AppCronRoom", "AppJobRoom"]
+
+[durable_objects]
+bindings = [
+  { name = "RECORD_ROOMS", class_name = "AppRecordRoom" },
+  { name = "YJS_ROOMS", class_name = "AppYjsRoom" },
+  { name = "CANVAS_ROOMS", class_name = "AppCanvasRoom" },
+  { name = "PRESENCE_ROOMS", class_name = "AppPresenceRoom" },
+  { name = "CRON_ROOMS", class_name = "AppCronRoom" },
+  { name = "JOB_ROOMS", class_name = "AppJobRoom" },
+]
+
+# For per-app resources (D1, KV, Vectorize, R2, Queues), set the id field to
+# "auto" — DeepSpace provisions and tears down with the deploy. Example:
+#
+# [[d1_databases]]
+# binding = "MY_DB"
+# database_name = "my-app-db"
+# database_id = "auto"
+#
+# Full reference (all binding types + companion fields):
+#   docs/proposals/binding-auto-provisioning.md
+
+[vars]
+APP_NAME = "drawspace"
+
+[dev]
+port = 8780
+inspector_port = 9237
+
+# Secrets (set via `wrangler secret put` or written by `deepspace dev`):
+#   AUTH_JWT_PUBLIC_KEY
+#   AUTH_JWT_ISSUER
+#   AUTH_WORKER_URL
+#   OWNER_USER_ID
