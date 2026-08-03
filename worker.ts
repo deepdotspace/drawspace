@@ -150,6 +150,7 @@ export interface Env extends DOBindings<typeof __DO_MANIFEST__> {
   AUTH_JWT_ISSUER: string
   AUTH_WORKER_URL: string
   APP_NAME: string
+  DEEPSPACE_APP_ID: string
   OWNER_USER_ID: string
   /**
    * Long-lived JWT minted for the app owner at deploy time. Server-side
@@ -741,7 +742,7 @@ app.all('/api/files/*', async (c) => {
   // let an unauthenticated browser read another user's files.
   headers.delete('x-user-id')
   headers.set('x-app-identity-token', c.env.APP_IDENTITY_TOKEN)
-  headers.set('x-app-name', c.env.APP_NAME)
+  headers.set('x-app-id', c.env.DEEPSPACE_APP_ID)
   if (userId) headers.set('x-user-id', userId)
 
   const resp = await platformWorkerFetch(
@@ -772,7 +773,7 @@ app.all('/api/files/*', async (c) => {
 
 // ---------------------------------------------------------------------------
 // /_deepspace/* — same-origin proxy to api-worker for authenticated SDK
-// hooks. Attaches APP_IDENTITY_TOKEN + APP_NAME so the browser never sees
+// hooks. Attaches APP_IDENTITY_TOKEN + DEEPSPACE_APP_ID so the browser never sees
 // the platform secret. Every request requires a signed user JWT.
 //
 // SECURITY: exact (method, path) allowlist — not a prefix match. A prefix
@@ -787,8 +788,8 @@ interface ProxyRoute {
   path: string
   /** Skip the user-JWT gate. Default false. Pricing tables are public. */
   publicRead?: boolean
-  /** Inject `?appName=...` (from env) into the forwarded URL. Default false. */
-  injectAppName?: boolean
+  /** Inject `?appId=...` (from env) into the forwarded URL. Default false. */
+  injectAppId?: boolean
 }
 
 const BROWSER_PROXY_ROUTES: ReadonlyArray<ProxyRoute> = [
@@ -819,16 +820,16 @@ app.all('/_deepspace/*', async (c) => {
     if (!auth?.userId) return c.json({ error: 'unauthorized' }, 401)
   }
 
-  // Inject appName into the query string when the route needs it. We can't
+  // Inject appId into the query string when the route needs it. We can't
   // rely on the HMAC header for routes the platform serves without HMAC
   // (e.g. /plans is public). Use URLSearchParams.set so we OVERWRITE any
-  // caller-supplied appName — otherwise a request to
-  // `/_deepspace/subscriptions/plans?appName=other_app` would forward a
+  // caller-supplied appId — otherwise a request to
+  // `/_deepspace/subscriptions/plans?appId=other_app` would forward a
   // duplicate-key query string and the platform would pick whichever value
   // its parser sees first.
   const forwardedParams = new URLSearchParams(url.search)
-  if (route.injectAppName) {
-    forwardedParams.set('appName', c.env.APP_NAME)
+  if (route.injectAppId) {
+    forwardedParams.set('appId', c.env.DEEPSPACE_APP_ID)
   }
   const queryString = forwardedParams.toString()
   const apiPath =
@@ -837,7 +838,7 @@ app.all('/_deepspace/*', async (c) => {
   const headers = new Headers(c.req.raw.headers)
   headers.delete('x-user-id')
   headers.set('x-app-identity-token', c.env.APP_IDENTITY_TOKEN)
-  headers.set('x-app-name', c.env.APP_NAME)
+  headers.set('x-app-id', c.env.DEEPSPACE_APP_ID)
   if (auth?.userId) headers.set('x-user-id', auth.userId)
 
   return apiWorkerFetch(c.env, apiPath, {

@@ -35,6 +35,7 @@ bindings = [
 #   docs/proposals/binding-auto-provisioning.md
 
 [vars]
+DEEPSPACE_APP_ID = "app_01KZ4FRZ3X8DMP3Z0APKYEY876"
 APP_NAME = "drawspace"
 
 [dev]
