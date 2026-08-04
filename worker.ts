@@ -786,10 +786,6 @@ app.all('/api/files/*', async (c) => {
 interface ProxyRoute {
   method: string
   path: string
-  /** Skip the user-JWT gate. Default false. Pricing tables are public. */
-  publicRead?: boolean
-  /** Inject `?appId=...` (from env) into the forwarded URL. Default false. */
-  injectAppId?: boolean
 }
 
 const BROWSER_PROXY_ROUTES: ReadonlyArray<ProxyRoute> = [
@@ -812,25 +808,12 @@ app.all('/_deepspace/*', async (c) => {
     return c.json({ error: 'not_found' }, 404)
   }
 
-  // Public-read routes (pricing tables) skip the JWT gate. Everything else
-  // requires a signed-in user.
-  let auth: Awaited<ReturnType<typeof resolveAuth>> | null = null
-  if (!route.publicRead) {
-    auth = await resolveAuth(c.req.raw, c.env)
-    if (!auth?.userId) return c.json({ error: 'unauthorized' }, 401)
-  }
+  const auth = await resolveAuth(c.req.raw, c.env)
+  if (!auth?.userId) return c.json({ error: 'unauthorized' }, 401)
 
-  // Inject appId into the query string when the route needs it. We can't
-  // rely on the HMAC header for routes the platform serves without HMAC
-  // (e.g. /plans is public). Use URLSearchParams.set so we OVERWRITE any
-  // caller-supplied appId — otherwise a request to
-  // `/_deepspace/subscriptions/plans?appId=other_app` would forward a
-  // duplicate-key query string and the platform would pick whichever value
-  // its parser sees first.
+  // Always overwrite caller input with this worker's immutable app id.
   const forwardedParams = new URLSearchParams(url.search)
-  if (route.injectAppId) {
-    forwardedParams.set('appId', c.env.DEEPSPACE_APP_ID)
-  }
+  forwardedParams.set('appId', c.env.DEEPSPACE_APP_ID)
   const queryString = forwardedParams.toString()
   const apiPath =
     url.pathname.replace('/_deepspace/', '/api/') + (queryString ? `?${queryString}` : '')
@@ -839,7 +822,7 @@ app.all('/_deepspace/*', async (c) => {
   headers.delete('x-user-id')
   headers.set('x-app-identity-token', c.env.APP_IDENTITY_TOKEN)
   headers.set('x-app-id', c.env.DEEPSPACE_APP_ID)
-  if (auth?.userId) headers.set('x-user-id', auth.userId)
+  headers.set('x-user-id', auth.userId)
 
   return apiWorkerFetch(c.env, apiPath, {
     method,

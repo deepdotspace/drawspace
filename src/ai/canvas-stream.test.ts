@@ -225,20 +225,14 @@ describe('toolCallToCanvasOps — free-space placement', () => {
 })
 
 describe('applyCanvasOp', () => {
-  function mockApi(): CanvasApi & {
-    addShape: ReturnType<typeof vi.fn>
-    updateShape: ReturnType<typeof vi.fn>
-    moveShape: ReturnType<typeof vi.fn>
-    resizeShape: ReturnType<typeof vi.fn>
-    deleteShape: ReturnType<typeof vi.fn>
-  } {
+  function mockApi() {
     return {
-      addShape: vi.fn(),
-      updateShape: vi.fn(),
-      moveShape: vi.fn(),
-      resizeShape: vi.fn(),
-      deleteShape: vi.fn(),
-    }
+      addShape: vi.fn<CanvasApi['addShape']>(),
+      updateShape: vi.fn<CanvasApi['updateShape']>(),
+      moveShape: vi.fn<CanvasApi['moveShape']>(),
+      resizeShape: vi.fn<CanvasApi['resizeShape']>(),
+      deleteShape: vi.fn<CanvasApi['deleteShape']>(),
+    } satisfies CanvasApi
   }
 
   it('routes a create op to addShape with the normalized shape', () => {

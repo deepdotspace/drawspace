@@ -225,7 +225,7 @@ export function registerAiChatRoutes(
     // Carry `parts` through so compaction can truncate stale tool results AND
     // turnsToCoreMessages can rebuild assistant tool-call/tool-result pairs.
     const rawTurns: ChatTurn[] = history.map((m) => ({
-      id: m.id,
+      id: m.recordId,
       role: m.role,
       content: m.content,
       parts: m.parts,

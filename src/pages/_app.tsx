@@ -12,7 +12,7 @@ import { Outlet, useRouteError } from 'react-router-dom'
 import { DeepSpaceAuthProvider, useAuthStatus } from 'deepspace'
 import { RecordProvider, RecordScope } from 'deepspace'
 import { ErrorScreen, ToastProvider } from '../components/ui'
-import { APP_NAME, SCOPE_ID } from '../constants'
+import { SCOPE_ID } from '../constants'
 import { schemas } from '../schemas'
 
 export default function App() {
@@ -62,7 +62,7 @@ function AuthBoot({ children }: { children: ReactNode }) {
 
   return (
     <RecordProvider allowAnonymous>
-      <RecordScope roomId={SCOPE_ID} schemas={schemas} appId={APP_NAME}>
+      <RecordScope roomId={SCOPE_ID} schemas={schemas}>
         {children}
       </RecordScope>
     </RecordProvider>
